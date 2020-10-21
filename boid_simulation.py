@@ -9,7 +9,7 @@ import pygame
 import time
 import glob
 import math, random
-from boid_tools import Boid
+from boid_tools import Boid, Boid_Cloud
 
 def main():
     
@@ -26,30 +26,14 @@ def main():
     bird_image = pygame.image.load('./graphics/top_down_bird_alpha.png')
     bird_images = []
     f = lambda x: (1 + math.sin(2*x)**2) / 4 + (3 / 4)
-    variable_scale = True
-    for theta in range(-45,360-45,2):
+    variable_scale = True #have birds fluctuate in size based on orientation (looks like elevation change)
+    for theta in range(-135,360-135,2):
         scale = 1 / f(theta * math.pi / 180) if variable_scale else 1
         w, h = int(bird_width * scale), int(bird_height * scale)
         img = pygame.transform.scale(bird_image, (w, h))
         img = pygame.transform.rotozoom(img, theta, 1)
         bird_images.append(img)
     
-    '''
-    # Import bird images (one image for every 2 degrees ccw from the neg y axis)
-    bird_width = bird_height = 50
-    bird_files = glob.glob('./graphics/rotated_birds/*')
-    bird_files.sort(key = lambda name: int(name.split('rotated_birds\\')[-1].split('_')[0]))
-    bird_images = []
-    f = lambda x: (1 + math.sin(2*x)**2) / 4 + (3 / 4)
-    for name in bird_files:
-        theta = int(name.split('rotated_birds\\')[-1].split('_')[0])
-        img = pygame.image.load(name)
-        scale = 1 / f(theta * math.pi / 180)
-        w, h = int(bird_width * scale), int(bird_height * scale)
-        img = pygame.transform.scale(img, (w, h))
-        img.set_colorkey((0, 0, 0, 0))
-        bird_images.append(img)
-    '''
     #Add GUI Header
     bg_board = [pygame.image.load('./graphics/gui_layout.png')]
     
@@ -57,16 +41,23 @@ def main():
         pygame.transform.scale(b, (int(bg_width),int(bg_height)))
     
     #Limit game speed
-    sleep_time = 0.03
+    sleep_time = 0
     
-    num_birds = 100
-    bird_speed = 10
+    # Set Bird properties
+    num_birds = 10
+    bird_speed = 15
+    bird_radius = 300
+    bird_phi = 100
+    
     boids = []
     for _ in range(num_birds):
         theta = random.randint(0, 359)
+        #theta = 90
         x = random.randint(bird_width, bg_width - bird_width)
         y = gui_height + bird_height + random.randint(0, bg_height-2*bird_height)
-        boids.append(Boid(x, y, theta, bird_speed))
+        boids.append(Boid(x, y, theta, bird_speed, bird_radius, bird_phi, (0, gui_height, window_width, window_height)))
+        
+    cloud = Boid_Cloud(wall = (0, gui_height, window_width, window_height))
     
     
     while True:
@@ -87,9 +78,16 @@ def main():
             pass
         
         surface.fill((255, 255, 255))
-        for bird in boids:
-            bird.theta = (bird.theta + 1) % 360
-            bird.draw(surface, bird_images[bird.theta // 2])
+        
+        cloud.update(boids)
+
+        for i,bird in enumerate(boids):
+            #bird.theta = (bird.theta + 1) % 360
+            bird.update(*cloud.visible_birds(bird.x, bird.y, bird.theta, bird.radius, bird.phi, i, bird.crit_radius),
+                        cloud.positions,
+                        cloud.velocities,
+                        cloud.too_close_to_wall)
+            bird.draw(surface, bird_images[int(bird.theta // 2) % len(bird_images)])
         
         surface.blit(bg_board[0], (0, 0))
         
