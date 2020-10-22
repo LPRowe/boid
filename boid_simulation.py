@@ -18,7 +18,7 @@ def main():
     window_width, window_height = 2000, 1200
     header_body_ratio = 0.8
     bg_width, bg_height = window_width, window_height * header_body_ratio
-    gui_width, gui_height = window_width, window_height * (1 - header_body_ratio)
+    gui_width, gui_height = window_width, int(window_height * (1 - header_body_ratio))
     surface = pygame.display.set_mode((window_width, window_height))
     
     # Import bird images (one image for every 2 degrees ccw from the neg y axis)
@@ -44,20 +44,20 @@ def main():
     sleep_time = 0
     
     # Set Bird properties
-    num_birds = 10
-    bird_speed = 15
-    bird_radius = 300
-    bird_phi = 100
+    num_birds = 20
+    bird_speed = 11
+    bird_radius = 200
+    bird_phi = 85
     
     boids = []
     for _ in range(num_birds):
         theta = random.randint(0, 359)
-        #theta = 90
+        #theta = 45
         x = random.randint(bird_width, bg_width - bird_width)
         y = gui_height + bird_height + random.randint(0, bg_height-2*bird_height)
-        boids.append(Boid(x, y, theta, bird_speed, bird_radius, bird_phi, (0, gui_height, window_width, window_height)))
+        boids.append(Boid(x, y, theta, bird_speed, bird_radius, bird_phi, (0, gui_height, window_width-bird_width, window_height-bird_width)))
         
-    cloud = Boid_Cloud(wall = (0, gui_height, window_width, window_height))
+    cloud = Boid_Cloud(walls = (0, gui_height, window_width, window_height))
     
     
     while True:
@@ -73,8 +73,9 @@ def main():
         
         #Handle Mouse Clicks for buttons
         mouse = pygame.mouse
-        if mouse.get_pressed()[0] and (mouse.get_pos()[1] <= gui_height):
+        if mouse.get_pressed()[0] and (mouse.get_pos()[1] >= gui_height):
             x,y = mouse.get_pos()
+            print(x,y)
             pass
         
         surface.fill((255, 255, 255))

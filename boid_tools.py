@@ -10,7 +10,7 @@ import math
 import functools
 
 class Boid_Cloud(object):
-    def __init__(self, wall = (0, 0, 100, 100)):
+    def __init__(self, walls = (0, 240, 2000, 1200)):
         '''
         Store single instant data for all boids
         Helpful for tweaking single boids based on other boid's behavior without
@@ -19,7 +19,7 @@ class Boid_Cloud(object):
         self.positions = []
         self.velocities = []
         self.too_close_to_wall = set()
-        self.x_min, self.y_min, self.x_max, self.y_max = wall
+        self.x_min, self.y_min, self.x_max, self.y_max = walls
         self.crit_radius = 100
     
     def update(self, boid_list):
@@ -53,8 +53,8 @@ class Boid_Cloud(object):
                     theta_low = theta - phi
                     theta_high = theta + phi
                     theta_bird = math.atan2(y2 - y, x2 - x) * 180 / math.pi
-                    theta_bird = theta_bird if theta_bird >= 0 else theta_bird + 360
-                    if (theta_low <= theta_bird <= theta_high) or (theta_low <= theta_bird % 360 <= theta_high):
+                    theta_low, theta_high = sorted((theta_low % 360, theta_high % 360))
+                    if theta_low <= theta_bird % 360 <= theta_high:
                         visible.add(i)
                         if R < crit_radius:
                             too_close.add(i)
@@ -62,7 +62,7 @@ class Boid_Cloud(object):
     
     
 class Boid(object):
-    def __init__(self, x, y, theta, s, radius = 100, phi = 150, walls = (0, 0, 100, 100)):
+    def __init__(self, x, y, theta, s, radius = 100, phi = 150, walls = (0, 240, 2000, 1200)):
         # Position / velocity params
         self.x = x
         self.y = y
@@ -74,19 +74,19 @@ class Boid(object):
         self.phi = phi # cannot see birds in the 60 degree window behind it
         
         # control params: what does the bird consider when updating it's movement
-        self.behavior = {'center_of_mass': 0.25,    # steer towards the center of mass of neighbors (weight 0 .. 1)
+        self.behavior = {'center_of_mass': 1,    # steer towards the center of mass of neighbors (weight 0 .. 1)
                          'social_distancing': 1, # don't get too close to neighbors (weight 0 .. 1)
                          'alignment': 0}         # match neighbor's velocity vector (weight 0 .. 1)
         
         # turning and velocity change capabilities
-        self.max_turn = 180 # cannot change more than 10 degrees in 1 frame
+        self.max_turn = 6 # cannot change more than 10 degrees in 1 frame
         self.max_acceleration = 0.2 # cannot change speed by more than 20% in 1 frame
         
         # bounds boid should not cross
         self.x_min, self.y_min, self.x_max, self.y_max = walls
         self.y_mid = (self.y_min + self.y_max) // 2
         self.x_mid = (self.x_min + self.x_max) // 2
-        self.crit_radius = 0.5 * radius # the point at which birds repel from one another
+        self.crit_radius = 0.4 * radius # the point at which birds repel from one another
         
     def draw(self, surface, image):
         surface.blit(image, (self.x, self.y))
@@ -108,19 +108,22 @@ class Boid(object):
         '''
         if not visible_birds:
             x_vel, y_vel = self.get_vel()
-            return (self.x + x_vel, self.y + y_vel)
+            return (self.x + x_vel, (self.y + y_vel))  # perhaps self.y + y_vel
         x_tot, y_tot = functools.reduce(lambda m, n: (m[0] + n[0], m[1] + n[1]), (bird_positions[i] for i in visible_birds))
         return (x_tot / len(visible_birds), y_tot / len(visible_birds))
     
     def weighted_average(self, thetas, weights):
-        return sum(weights[i]*thetas[i] for i in range(len(weights))) / sum(weights)
+        w = sum(weights)
+        return sum(weights[i]*thetas[i] for i in range(len(weights))) / w if w else sum(thetas) // 3
     
     def angle(self, x1, y1, x2, y2):
         '''returns angle between (x1,y1) and (x2,y2)'''
-        a = math.atan2(y2 - y1, x2 - x1) * 180 / math.pi
-        return a if a >= 0 else a + 360
+        return math.atan2(-(y2 - y1), x2 - x1) * 180 / math.pi
     
     def update(self, visible_birds, too_close_birds, bird_positions, bird_velocities, too_close_to_wall):
+        '''
+        Uses boid rules of separation, cohesion and alignment to update birds movement
+        '''
         
         # If bird is too close to the wall, moving away from the wall will take priority
         if (self.x < self.x_min + self.crit_radius) or (self.y < self.y_min + self.crit_radius) or \
@@ -135,7 +138,6 @@ class Boid(object):
             if self.behavior['center_of_mass']:
                 xbar, ybar = self.center_mass(visible_birds - too_close_to_wall, bird_positions)
                 theta_mass = self.angle(self.x, self.y, xbar, ybar)
-                theta_mass = theta_mass if theta_mass >= 0 else theta_mass + 360
             
             # keep your distance from neighboring birds
             if self.behavior['social_distancing']:
@@ -145,24 +147,33 @@ class Boid(object):
                     thetas = []
                     for i in too_close_birds:
                         # +180 because we want to move away from visible birds
-                        thetas.append((180 + self.angle(self.x, self.y, bird_positions[i][0], bird_positions[i][1])) % 360)
-                    theta_social_dist = (sum(thetas) / len(thetas)) % 360
+                        thetas.append(self.angle(self.x, self.y, bird_positions[i][0], bird_positions[i][1]))
+                    theta_social_dist = 180 + sum(thetas) / len(thetas)
                 
             # align vector with neighboring birds
             if self.behavior['alignment']:
                 pass
         
             thetas = [theta_mass, theta_social_dist, theta_alignment]
-            
+            #thetas = [self.angle(self.x, self.y, self.x_mid, self.y_mid)]*3
+        
+        
+        
         weights = [self.behavior['center_of_mass'], self.behavior['social_distancing'], self.behavior['alignment']]
         target_theta = self.weighted_average(thetas, weights)
+        target_theta %= 360
         
         # update birds direction
-        if abs(target_theta - self.theta) <= self.max_turn:
+        if abs(target_theta - self.theta) <= self.max_turn or abs(target_theta - 360 - self.theta) <= self.max_turn:
             self.theta = target_theta
         else:
-            t1, t2 = self.theta - self.max_turn, self.theta + self.max_turn
-            self.theta = min(t1, t2, key = lambda t: abs(target_theta - t))
+            if abs(target_theta - self.theta) <= 180:
+                self.theta += self.max_turn if target_theta > self.theta else -self.max_turn
+            else:
+                self.theta += self.max_turn if target_theta < self.theta else -self.max_turn
+        self.theta %= 360
+            #t1, t2 = self.theta - self.max_turn, self.theta + self.max_turn
+            #self.theta = min(t1, t2, key = lambda t: abs(target_theta - t))
         
         # update birds position
         x_vel, y_vel = self.get_vel()
