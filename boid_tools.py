@@ -39,6 +39,10 @@ class GUI(object):
         self.radar_color = (88, 214, 141)
         self.crit_radar_color = (255, 124, 124)
         
+        # Bird radar scale bar
+        self.scale_start = (59, 270)
+        self.scale_width = 10
+        
     def generate_radar_points(self):
         phi = self.bird_phi * math.pi / 180
         radar_thetas = np.linspace(-phi + self.theta_offset, phi + self.theta_offset, 120)
@@ -56,6 +60,12 @@ class GUI(object):
         
         # Radar Crit Radius
         pygame.draw.polygon(surface, self.crit_radar_color, self.crit_radar_points)
+        
+        # Scale bar
+        pygame.draw.line(surface, self.radar_color, self.scale_start, 
+                         (self.scale_start[0] + self.bird_radius, self.scale_start[1]), self.scale_width)
+        pygame.draw.line(surface, self.crit_radar_color, self.scale_start, 
+                         (self.scale_start[0] + self.crit_radius * self.bird_radius, self.scale_start[1]), self.scale_width)
 
         # R
         text_radius = self.font.render(str(int(self.bird_radius)) + " pixels", 1, self.font_color)
@@ -138,34 +148,50 @@ class Boid_Cloud(object):
             if i != j: 
                 R = ((x2 - x) ** 2 + (y2 - y) ** 2) ** 0.5
                 if R <= radius:
-                    theta -= 90 # to orient with x + axis
+                    theta_bird = math.atan2(-(y2 - y), x2 - x) % 360
                     theta_low = theta - phi
                     theta_high = theta + phi
-                    theta_bird = math.atan2(y2 - y, x2 - x) * 180 / math.pi
-                    theta_low, theta_high = sorted((theta_low % 360, theta_high % 360))
-                    if theta_low <= theta_bird % 360 <= theta_high:
+                    
+                    in_range = False
+                    
+                    if theta_low < 0:
+                        if theta_low%360 <= theta_bird or theta_high >= theta_bird:
+                            in_range = True
+                    elif theta_high >= 360:
+                        if theta_high%360 >= theta_bird or theta_low <= theta_bird:
+                            in_range = True
+                    else:
+                        if theta_low <= theta_bird <= theta_high:
+                            in_range = True
+                    
+                    if in_range:
                         visible.add(i)
                         if R < crit_radius:
                             too_close.add(i)
+                            
         return visible, too_close
     
     
 class Boid(object):
-    def __init__(self, x, y, theta, s, radius = 100, phi = 150, walls = (0, 240, 2000, 1200)):
+    def __init__(self, x, y, theta, s, radius = 100, phi = 150, walls = (0, 240, 2000, 1200), bird_dimensions = (50, 50), behavior = (1, 1, 1)):
         # Position / velocity params
         self.x = x
         self.y = y
         self.theta = theta
         self.speed = s
         
+        # bird geometry
+        self.dimensions = bird_dimensions
+        self.offset_x, self.offset_y = int(0.5 * bird_dimensions[0]), int(0.5 * bird_dimensions[1])
+        
         # vision params
         self.radius = radius # can see all birds within self.radius pixel radius
         self.phi = phi # cannot see birds in the 60 degree window behind it
         
         # control params: what does the bird consider when updating it's movement
-        self.behavior = {'center_of_mass': .25,    # steer towards the center of mass of neighbors (weight 0 .. 1)
-                         'social_distancing': 1, # don't get too close to neighbors (weight 0 .. 1)
-                         'alignment': 1}         # match neighbor's velocity vector (weight 0 .. 1)
+        self.behavior = {'center_of_mass': behavior[0],    # steer towards the center of mass of neighbors (weight 0 .. 1)
+                         'social_distancing': behavior[1], # don't get too close to neighbors (weight 0 .. 1)
+                         'alignment': behavior[2]}         # match neighbor's velocity vector (weight 0 .. 1)
         
         # turning and velocity change capabilities
         self.max_turn = 3 # cannot change more than 10 degrees in 1 frame
@@ -178,16 +204,14 @@ class Boid(object):
         self.crit_radius = 0.4 * radius # the point at which birds repel from one another
         
     def draw(self, surface, image):
-        surface.blit(image, (self.x, self.y))
+        surface.blit(image, (self.x + self.offset_x, self.y + self.offset_y))
     
     def get_vel(self):
         '''
         Returns current (x_vel, y_vel) for boid
         '''
-        #theta = (self.theta - 90) % 360 # because self.theta is wrt y- axis
-        theta = self.theta
-        x_vel = self.speed * math.cos(theta * math.pi / 180)
-        y_vel = -1 * self.speed * math.sin(theta * math.pi / 180) # remember down is positive for y
+        x_vel = self.speed * math.cos(self.theta * math.pi / 180)
+        y_vel = -1 * self.speed * math.sin(self.theta * math.pi / 180) # remember down is positive for y
         return (x_vel, y_vel)
     
     def center_mass(self, visible_birds, bird_positions):
@@ -227,7 +251,7 @@ class Boid(object):
             if self.behavior['center_of_mass']:
                 #xbar, ybar = self.center_mass(visible_birds - too_close_to_wall, bird_positions)
                 xbar, ybar = center_all_boids
-                #xbar, ybar = self.center_mass(visible_birds, bird_positions)
+                xbar, ybar = self.center_mass(visible_birds, bird_positions)
                 theta_mass = self.angle(self.x, self.y, xbar, ybar) % 360
             
             # keep your distance from neighboring birds
@@ -252,9 +276,6 @@ class Boid(object):
                     theta_align = theta_align // len(visible_birds)
         
             thetas = [theta_mass, theta_social_dist, theta_alignment]
-            #print()
-            #print([int(t) for t in thetas])
-        
         
         weights = [self.behavior['center_of_mass'], self.behavior['social_distancing'], self.behavior['alignment']]
         target_theta = self.weighted_average(thetas, weights)
@@ -267,8 +288,6 @@ class Boid(object):
         self.x = max(self.x_min, min(self.x, self.x_max))
         self.y = max(self.y_min, min(self.y, self.y_max))
         
-        #print('curr/target',int(self.theta), int(target_theta))
-        
         # update birds direction
         if abs(target_theta - self.theta) <= self.max_turn or abs(target_theta - 360 - self.theta) <= self.max_turn:
             self.theta = target_theta
@@ -278,46 +297,6 @@ class Boid(object):
             else:
                 self.theta += self.max_turn if target_theta < self.theta else -self.max_turn
         self.theta %= 360
-        
-        #print('new_theta',int(self.theta))
-        #print()
-        
 
-        
 
-            
-        
-        
-    
-    
-        
-    
-        
-        
-    
-    
-    
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
     

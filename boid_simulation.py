@@ -83,7 +83,7 @@ def main(gui, bird_phi, bird_radius, crit_radius, max_turn, bird_speed, num_bird
     
     # Import bird images (one image for every 2 degrees ccw from the neg y axis)
     bird_width = bird_height = 50
-    bird_image = pygame.image.load('./graphics/top_down_bird_alpha.png')
+    bird_image = pygame.image.load('./graphics/top_down_bird_alpha.png') #.png higher res and faster
     bird_images = []
     f = lambda x: (1 + math.sin(2*x)**2) / 4 + (3 / 4)
     variable_scale = True #have birds fluctuate in size based on orientation (looks like elevation change)
@@ -98,18 +98,20 @@ def main(gui, bird_phi, bird_radius, crit_radius, max_turn, bird_speed, num_bird
     radar_bird = bird_images[45].copy()
     
     #Add GUI Header
-    bg_board = [pygame.image.load('./graphics/gui_layout.png')]
-    
-    for b in bg_board:
-        b = pygame.transform.scale(b, (int(gui_width),int(gui_height)))
+    bg_board = pygame.image.load('./graphics/gui_layout.jpg')
+    bg_board = pygame.transform.scale(bg_board, (int(gui_width),int(gui_height)))
+    bg_board = [bg_board]
     
     # Populate birds
+    behavior = (cohesion_coef, separation_coef, alignment_coef)
     boids = []
     for _ in range(num_birds):
         theta = random.randint(0, 359)
         x = random.randint(bird_width, bg_width - bird_width)
         y = gui_height + bird_height + random.randint(0, bg_height - 2*bird_height)
-        boids.append(Boid(x, y, theta, bird_speed, bird_radius, bird_phi, (0, gui_height, window_width-bird_width, window_height-bird_width)))
+        boids.append(Boid(x, y, theta, bird_speed, bird_radius, bird_phi, 
+                          (0, gui_height, window_width-bird_width, window_height-bird_width),
+                          (bird_width, bird_height), behavior))
     
     # Track all boids positions and velocities in the boid cloud
     cloud = Boid_Cloud(walls = (0, gui_height, window_width, window_height))
@@ -122,7 +124,8 @@ def main(gui, bird_phi, bird_radius, crit_radius, max_turn, bird_speed, num_bird
     run = True
     
     while True:
-        time.sleep(sleep_time) #slow down run speed for all algorithms besides A*
+        if sleep_time:
+            time.sleep(sleep_time) #slow down run speed for all algorithms besides A*
         
         event = pygame.event.poll()
         if event.type == pygame.QUIT:
@@ -145,7 +148,10 @@ def main(gui, bird_phi, bird_radius, crit_radius, max_turn, bird_speed, num_bird
                     theta = random.randint(0, 359)
                     x = random.randint(bird_width, bg_width - bird_width)
                     y = gui_height + bird_height + random.randint(0, bg_height-2*bird_height)
-                    boids.append(Boid(x, y, theta, bird_speed, bird_radius, bird_phi, (0, gui_height, window_width-bird_width, window_height-bird_width)))
+                    behavior = (cohesion_coef, separation_coef, alignment_coef)
+                    boids.append(Boid(x, y, theta, bird_speed, bird_radius, bird_phi, 
+                                      (0, gui_height, window_width-bird_width, window_height-bird_width),
+                                      (bird_width, bird_height), behavior))
                     gui.num_birds = len(boids)
                 elif action == 'num_birds_down':
                     if len(boids) > 1:
@@ -159,7 +165,7 @@ def main(gui, bird_phi, bird_radius, crit_radius, max_turn, bird_speed, num_bird
                 elif action == 'start':
                     run = not run
                 elif 'phi' in action:
-                    bird_phi += 1 if 'up' in action else -1
+                    bird_phi += 2 if 'up' in action else -2
                     bird_phi = max(0, min(bird_phi, 180))
                     gui.bird_phi = bird_phi
                     gui.generate_radar_points()
@@ -182,23 +188,25 @@ def main(gui, bird_phi, bird_radius, crit_radius, max_turn, bird_speed, num_bird
                     gui.bird_speed = bird_speed
                     for bird in boids: bird.speed = bird_speed
                 elif 'r_' in action:
-                    bird_radius += 1 if 'up' in action else -1
+                    bird_radius += 2 if 'up' in action else -2
                     bird_radius = max(0, min(bird_radius, 2000))
                     gui.bird_radius = bird_radius
                     gui.generate_radar_points()
-                    for bird in boids: bird.radius = bird_radius
+                    for bird in boids: 
+                        bird.radius = bird_radius
+                        bird.crit_radius = gui.crit_radius * bird.radius
                 elif 'separation' in action:
-                    separation_coef += 0.01 if 'up' in action else -0.01
+                    separation_coef += 0.02 if 'up' in action else -0.02
                     separation_coef = max(0, min(separation_coef, 1))
                     gui.separation_coef = separation_coef
                     for bird in boids: bird.behavior['social_distancing'] = separation_coef
                 elif 'alignment' in action:
-                    alignment_coef += 0.01 if 'up' in action else -0.01
+                    alignment_coef += 0.02 if 'up' in action else -0.02
                     alignment_coef = max(0, min(alignment_coef, 1))
                     gui.alignment_coef = alignment_coef
                     for boid in boids: bird.behavior['alignment'] = alignment_coef
                 elif 'cohesion' in action:
-                    cohesion_coef += 0.01 if 'up' in action else -0.01
+                    cohesion_coef += 0.02 if 'up' in action else -0.02
                     cohesion_coef = max(0, min(cohesion_coef, 1))
                     gui.cohesion_coef = cohesion_coef
                     for bird in boids: bird.behavior['center_of_mass'] = cohesion_coef
@@ -206,12 +214,17 @@ def main(gui, bird_phi, bird_radius, crit_radius, max_turn, bird_speed, num_bird
                 
         elif mouse.get_pressed()[0]:
             # scatter birds
+            x,y = mouse.get_pos()
+            print(x, y)
             pass
         
+        # =============================================================================
+        # Update surface: blit images       
+        # =============================================================================
         surface.fill((255, 255, 255))
         
+        t0 = time.time_ns()
         cloud.update(boids)
-
         for i,bird in enumerate(boids):
             bird.update(*cloud.visible_birds(bird.x, bird.y, bird.theta, bird.radius, bird.phi, i, bird.crit_radius),
                         cloud.positions,
@@ -219,11 +232,9 @@ def main(gui, bird_phi, bird_radius, crit_radius, max_turn, bird_speed, num_bird
                         cloud.too_close_to_wall,
                         cloud.center_mass)
             bird.draw(surface, bird_images[int(bird.theta // 2) % len(bird_images)])
-        
         surface.blit(bg_board[0], (0, 0))
         gui.draw(surface)
         surface.blit(radar_bird, (202, 97)) # draw bird at center of radar
-        
         pygame.display.flip()
 
     pygame.quit()
@@ -233,16 +244,16 @@ if __name__ == '__main__':
     pygame.display.set_caption('Boid Simulation')
     
     settings = {
-                'bird_phi' : 85,       # how wide of an angle can birds see (0 .. 180) phi = 180 is 360 deg vision
-                'bird_radius' : 400,   # how far bird can see
-                'crit_radius' : 0.25,  # percent of visual radius 
-                'max_turn' : 3,        # maximum degrees a bird can turn in one frame
-                'bird_speed' : 10,     # pixels / second
-                'num_birds' : 40,
-                'separation_coef' : 1, # bird law coefficients
+                'bird_phi' : 90,       # how wide of an angle can birds see (0 .. 180) phi = 180 is 360 deg vision
+                'bird_radius' : 300,    # how far bird can see
+                'crit_radius' : 0.5,    # percent of visual radius 
+                'max_turn' : 5,         # maximum degrees a bird can turn in one frame
+                'bird_speed' : 10,       # pixels / second
+                'num_birds' : 50,
+                'separation_coef' : 1,  # bird law coefficients
                 'alignment_coef' : 1,
                 'cohesion_coef' : 1, 
-                'sleep_time' : 0,      # limit play speed by pausing sleep_time [ms] between frames
+                'sleep_time' : 0,       # limit play speed by pausing sleep_time [ms] between frames
                 }
     
     main(gui = GUI(**settings), **settings)
