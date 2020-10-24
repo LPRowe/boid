@@ -238,7 +238,7 @@ if __name__ == '__main__':
                 'crit_radius' : 0.25,  # percent of visual radius 
                 'max_turn' : 3,        # maximum degrees a bird can turn in one frame
                 'bird_speed' : 10,     # pixels / second
-                'num_birds' : 100,
+                'num_birds' : 40,
                 'separation_coef' : 1, # bird law coefficients
                 'alignment_coef' : 1,
                 'cohesion_coef' : 1, 

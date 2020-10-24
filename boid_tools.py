@@ -57,8 +57,6 @@ class GUI(object):
         # Radar Crit Radius
         pygame.draw.polygon(surface, self.crit_radar_color, self.crit_radar_points)
 
-        # Radar Bird
-        
         # R
         text_radius = self.font.render(str(int(self.bird_radius)) + " pixels", 1, self.font_color)
         surface.blit(text_radius, (459,48-self.offset))
@@ -110,6 +108,7 @@ class Boid_Cloud(object):
     def update(self, boid_list):
         self.positions = []
         self.velocities = []
+        self.too_close_to_wall = set()
         self.center_mass = [0, 0]
         for i, bird in enumerate(boid_list):
             x, y = bird.x, bird.y
