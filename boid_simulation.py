@@ -243,7 +243,7 @@ if __name__ == '__main__':
                 'separation_coef' : 1,  # bird law coefficients
                 'alignment_coef' : 1,
                 'cohesion_coef' : 1, 
-                'sleep_time' : 0,       # limit play speed by pausing sleep_time [ms] between frames
+                'sleep_time' : 0.02,       # limit play speed by pausing sleep_time [s] between frames
                 }
     
     main(gui = GUI(**settings), **settings)
