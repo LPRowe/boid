@@ -11,15 +11,6 @@ import glob
 import math, random
 from boid_tools import Boid, Boid_Cloud, GUI
 
-
-
-
-
-
-
-
-
-
 class Click_Action(object):
     def __init__(self, action_map):
         self.click_map = {(34, 22, 78, 80):'phi_up',
@@ -223,7 +214,6 @@ def main(gui, bird_phi, bird_radius, crit_radius, max_turn, bird_speed, num_bird
         # =============================================================================
         surface.fill((255, 255, 255))
         
-        t0 = time.time_ns()
         cloud.update(boids)
         for i,bird in enumerate(boids):
             bird.update(*cloud.visible_birds(bird.x, bird.y, bird.theta, bird.radius, bird.phi, i, bird.crit_radius),
