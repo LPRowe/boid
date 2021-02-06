@@ -132,7 +132,7 @@ def main(gui, bird_phi, bird_radius, crit_radius, max_turn, bird_speed, num_bird
         mouse = pygame.mouse
         if mouse.get_pressed()[0] and (mouse.get_pos()[1] <= gui_height):
             x,y = mouse.get_pos()
-            print(x,y)
+            #print(x,y)
             action = click._click_to_action(x,y)
             if action:
                 if action == 'num_birds_up':
@@ -160,7 +160,7 @@ def main(gui, bird_phi, bird_radius, crit_radius, max_turn, bird_speed, num_bird
                     bird_phi = max(0, min(bird_phi, 180))
                     gui.bird_phi = bird_phi
                     gui.generate_radar_points()
-                    print('phi', bird_phi)
+                    #print('phi', bird_phi)
                     for bird in boids: bird.phi = bird_phi
                 elif 'rc' in action:
                     crit_radius += 0.01 if 'up' in action else -0.01
@@ -206,7 +206,7 @@ def main(gui, bird_phi, bird_radius, crit_radius, max_turn, bird_speed, num_bird
         elif mouse.get_pressed()[0]:
             # scatter birds
             x,y = mouse.get_pos()
-            print(x, y)
+            #print(x, y)
             pass
         
         # =============================================================================
@@ -239,7 +239,7 @@ if __name__ == '__main__':
                 'crit_radius' : 0.5,    # percent of visual radius 
                 'max_turn' : 5,         # maximum degrees a bird can turn in one frame
                 'bird_speed' : 10,       # pixels / second
-                'num_birds' : 50,
+                'num_birds' : 20,
                 'separation_coef' : 1,  # bird law coefficients
                 'alignment_coef' : 1,
                 'cohesion_coef' : 1, 
