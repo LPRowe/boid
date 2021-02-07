@@ -57,13 +57,13 @@ Adjust the parameters to see different types of behaviors that emerge.
 ## Some of my other projects:
 
 <b>
-1. <a href="https://github.com/LPRowe/path-finding-visualizer">Path finding visualizer for A*, BFS, and mulltisource BFS</a>
-1. <a href="https://github.com/LPRowe/genetic-algorithm">Trained an AI to play snake (reinforcment learning)</a>
-1. <a href="https://github.com/LPRowe/traveling-salesman-problem">Heuristic solutions to the traveling salesman problem (TSP)</a>
-1. <a href="https://github.com/LPRowe/coding-interview-practice">Solutions to data structures and algorithms problems</a>
-1. <a href="https://github.com/LPRowe/3D-nanopore-reconstruction">Rendered 3D models of nanopores from 2D SEM images</a>
-1. <a href="https://github.com/LPRowe/bowtie-defect-identification">Trained an ML model to detect microcracks from infrared images</a>
-1. <a href="https://github.com/LPRowe/sudoku">Sudoku solver, puzzle generator, and playable game (backtracking and logic)</a>
-1. <a href="https://github.com/LPRowe/connect-four-kaggle">Play connect four against a neural network</a>
-1. <a href="https://github.com/LPRowe/titanic">Predicted who would survive the titanic</a>
+1. <a href="https://github.com/LPRowe/path-finding-visualizer">Path finding visualizer for A*, BFS, and mulltisource BFS</a><br>
+2. <a href="https://github.com/LPRowe/genetic-algorithm">Trained an AI to play snake (reinforcment learning)</a><br>
+3. <a href="https://github.com/LPRowe/traveling-salesman-problem">Heuristic solutions to the traveling salesman problem (TSP)</a><br>
+4. <a href="https://github.com/LPRowe/coding-interview-practice">Solutions to data structures and algorithms problems</a><br>
+5. <a href="https://github.com/LPRowe/3D-nanopore-reconstruction">Rendered 3D models of nanopores from 2D SEM images</a><br>
+6. <a href="https://github.com/LPRowe/bowtie-defect-identification">Trained an ML model to detect microcracks from infrared images</a><br>
+7. <a href="https://github.com/LPRowe/sudoku">Sudoku solver, puzzle generator, and playable game (backtracking and logic)</a><br>
+8. <a href="https://github.com/LPRowe/connect-four-kaggle">Play connect four against a neural network</a><br>
+9. <a href="https://github.com/LPRowe/titanic">Predicted who would survive the titanic</a><br>
 </b>
