@@ -5,7 +5,7 @@ Simulation of bird flocking behavior with variable parameters for the bird's fie
 # Try it yourself.
 
 Method 1: <br>
-1. Clone this repo and run boid_simulator.py in python3 the only dependencies that are not built in to python are numpy and pygame
+1. Clone this repo and run boid_simulator.py in python3 the only dependencies that are not built into python are numpy and pygame
 
 Method 2:<br>
 1. Right click the Gitpod button below and select open in new tab
