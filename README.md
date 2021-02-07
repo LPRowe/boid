@@ -42,14 +42,16 @@ A boid object follows three simple rules:
 
 When all three rules are applied to each boids in a set of boids, the boids appear to behave similarly to a flock of birds.  This is an example of emergent behavior.  
 
-# Things to try:
+# Some things to try:
 
-Adjust the parameters to see the different types of behaviors that emerge.
+Adjust the parameters to see different types of behaviors that emerge.
 
 - [ ] Set separation coefficient to 0 and increase the birds turning radius.
 - [ ] Set R<sub>c</sub> to 100%.
-- [ ] How does increasing the bird speed affect their ability to flock together and avoid walls? Does increasing max turn help?
-- [ ] Set speed and separation to 0, then adjust the birds field of view (phi and R) to watch how their behavior changes in place.  Then change cohesion to 0 and separation to 100, how does this affect the birds behavior?
+- [ ] How does increasing the bird speed affect their ability to flock together and avoid walls? 
+- [ ] Does increasing max turn help?
+- [ ] Set speed and separation to 0, then adjust the birds field of view (phi and R) to watch how their behavior changes in place.  
+- [ ] Change cohesion to 0 and separation to 100, how does this affect the birds behavior?
 
 
 ## Some of my other projects:
